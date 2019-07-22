@@ -8,7 +8,7 @@ setuptools.setup(
     author='bwilliam0',
     author_email='dev@mycodeiscompiling.com',
     license='MIT',
-    packages=setuptools.find_packages(exclude=('bin',)),
+    packages=setuptools.find_packages(exclude=('scripts',)),
     entry_points={
         'console_scripts': [
             'mc-manager = mc_server_manager.mc_server_manager:main'
