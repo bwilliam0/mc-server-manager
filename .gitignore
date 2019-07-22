@@ -1,0 +1,4 @@
+bin/
+dist/
+mc_server_manager.egg-info/
+mc_server_manager/__pycache__/
