@@ -49,25 +49,35 @@ class MainMenu(State):
         ec2 = boto3.client('ec2')
         self._server_statuses = []
         for server in servers:
-            response = ec2.describe_instances(
-                InstanceIds=[
-                    server['InstanceId']
-                ]
-            )
+            try:
+                response = ec2.describe_instances(
+                    InstanceIds=[
+                        server['InstanceId']
+                    ]
+                )
 
-            current_state = response['Reservations'][0]['Instances'][0]['State']['Name']
-            ip_address = 'NOT APPLICABLE'
+                current_state = response['Reservations'][0]['Instances'][0]['State']['Name']
+                ip_address = 'NOT APPLICABLE'
 
-            if ('running' == current_state):
-                ip_address = response['Reservations'][0]['Instances'][0]['NetworkInterfaces'][0]['PrivateIpAddresses'][0]['Association']['PublicIp']
-            self._server_statuses.append(
-                {
-                    'Name': server['Name'],
-                    'InstanceId': server['InstanceId'],
-                    'State': current_state,
-                    'IpAddress': ip_address
-                }
-            )
+                if ('running' == current_state):
+                    ip_address = response['Reservations'][0]['Instances'][0]['NetworkInterfaces'][0]['PrivateIpAddresses'][0]['Association']['PublicIp']
+                self._server_statuses.append(
+                    {
+                        'Name': server['Name'],
+                        'InstanceId': server['InstanceId'],
+                        'State': current_state,
+                        'IpAddress': ip_address
+                    }
+                )
+            except:
+                self._server_statuses.append(
+                    {
+                        'Name': server['Name'],
+                        'InstanceId': server['InstanceId'],
+                        'State': 'ERROR RETRIEVING STATE',
+                        'IpAddress': 'ERROR RETRIEVING IP ADDRESS'
+                    }
+                )
 
     def printMainMenu(self, menu_context):
         clear_console()
@@ -110,71 +120,90 @@ class ServerMenu(State):
     def start_server(self, instance_id):
         print('Please wait while the server is started. This may take a few minutes...')
         ec2 = boto3.client('ec2')
-        ec2.start_instances(
-            InstanceIds = [
-                instance_id
-            ]
-        )
-        waiter = ec2.get_waiter('instance_running')
-        waiter.wait(
-            InstanceIds = [
-                instance_id
-            ]
-        )
+        try:
+            ec2.start_instances(
+                InstanceIds = [
+                    instance_id
+                ]
+            )
+            waiter = ec2.get_waiter('instance_running')
+            waiter.wait(
+                InstanceIds = [
+                    instance_id
+                ]
+            )
+        except:
+            input('Unable to start server. Press any key to continue...')
 
     def stop_server(self, instance_id):
         print('Please wait while the server is stopped. This may take a few minutes...')
         ec2 = boto3.client('ec2')
-        ec2.stop_instances(
-            InstanceIds = [
-                instance_id
-            ]
-        )
-        waiter = ec2.get_waiter('instance_stopped')
-        waiter.wait(
-            InstanceIds = [
-                instance_id
-            ]
-        )
+        try:
+            ec2.stop_instances(
+                InstanceIds = [
+                    instance_id
+                ]
+            )
+            waiter = ec2.get_waiter('instance_stopped')
+            waiter.wait(
+                InstanceIds = [
+                    instance_id
+                ]
+            )
+        except:
+            input('Unable to start server. Press any key to continue...')
 
     def restart_server(self, instance_id):
         print('Please wait while the server is restarted. This may take a few minutes...')
         ec2 = boto3.client('ec2')
-        ec2.reboot_instances(
-            InstanceIds = [
-                instance_id
-            ]
-        )
-        waiter = ec2.get_waiter('instance_running')
-        waiter.wait(
-            InstanceIds = [
-                instance_id
-            ]
-        )
+        try:
+            ec2.reboot_instances(
+                InstanceIds = [
+                    instance_id
+                ]
+            )
+            waiter = ec2.get_waiter('instance_running')
+            waiter.wait(
+                InstanceIds = [
+                    instance_id
+                ]
+            )
+        except:
+            input('Unable to start server. Press any key to continue...')
 
     def refresh_server_info(self):
         ec2 = boto3.client('ec2')
         self._server_statuses = []
         for server in servers:
-            response = ec2.describe_instances(
-                InstanceIds=[
-                    server['InstanceId']
-                ]
-            )
+            try:
+                response = ec2.describe_instances(
+                    InstanceIds=[
+                        server['InstanceId']
+                    ]
+                )
 
-            current_state = response['Reservations'][0]['Instances'][0]['State']['Name']
-            ip_address = 'NOT APPLICABLE'
+                current_state = response['Reservations'][0]['Instances'][0]['State']['Name']
+                ip_address = 'NOT APPLICABLE'
 
-            if ('running' == current_state):
-                ip_address = response['Reservations'][0]['Instances'][0]['NetworkInterfaces'][0]['PrivateIpAddresses'][0]['Association']['PublicIp']
-            self._server_statuses.append(
-                {
-                    'Name': server['Name'],
-                    'InstanceId': server['InstanceId'],
-                    'State': current_state,
-                    'IpAddress': ip_address
-                }
-            )
+                if ('running' == current_state):
+                    ip_address = response['Reservations'][0]['Instances'][0]['NetworkInterfaces'][0]['PrivateIpAddresses'][0]['Association']['PublicIp']
+                self._server_statuses.append(
+                    {
+                        'Name': server['Name'],
+                        'InstanceId': server['InstanceId'],
+                        'State': current_state,
+                        'IpAddress': ip_address
+                    }
+                )
+            except:
+                self._server_statuses.append(
+                    {
+                        'Name': server['Name'],
+                        'InstanceId': server['InstanceId'],
+                        'State': 'ERROR RETRIEVING STATE',
+                        'IpAddress': 'ERROR RETRIEVING IP ADDRESS'
+                    }
+                )
 
     def print_server_menu(self, menu_context):
         clear_console()
@@ -277,3 +306,6 @@ def main():
     menu_context = MenuContext(MainMenu())
     while (True):
         menu_context.request()
+
+if (__name__ == "__main__"):
+    main()
