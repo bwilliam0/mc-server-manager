@@ -3,18 +3,8 @@ import abc
 import os
 import boto3
 import configparser
+import json
 from pathlib import Path
-
-servers = [
-    {
-        'Name': 'Minecraft 1.13',
-        'InstanceId': 'i-0751d2d036e1896eb',
-    },
-    {
-        'Name': 'Minecraft 1.14',
-        'InstanceId': 'i-00f44ec4ca6165da4',
-    }
-]
 
 def clear_console():
     if (os.name == 'nt'):
@@ -44,11 +34,17 @@ class MainMenu(State):
 
     def __init__(self):
         self._server_statuses = None
+        config_path = str(Path.home()) + '/.mc-server-manager/config'
+        with open(config_path, 'r') as config_in:
+            self._servers = json.load(config_in)
 
     def refresh_server_info(self):
+        config_path = str(Path.home()) + '/.mc-server-manager/config'
+        with open(config_path, 'r') as config_in:
+            self._servers = json.load(config_in)
         ec2 = boto3.client('ec2')
         self._server_statuses = []
-        for server in servers:
+        for server in self._servers:
             try:
                 response = ec2.describe_instances(
                     InstanceIds=[
@@ -92,6 +88,7 @@ class MainMenu(State):
             print('[1] Start and stop servers')
             print('[2] Update your AWS credentials')
             print('[3] Refresh server details')
+            print('[4] Modify App Settings')
             print('[0] Exit')
 
             selection = input('Selection: ')
@@ -102,13 +99,13 @@ class MainMenu(State):
             elif (selection == '3'):
                 print('Please wait a moment, refreshing details...')
                 self.refresh_server_info()
+            elif (selection == '4'):
+                menu_context.set_state(AppConfigMenu())
             elif (selection == '0'):
                 clear_console()
                 exit()
             else:
                 print('Invalid selection....')
-            
-        
 
     def handle(self, menu_context):
         if (self._server_statuses is None):
@@ -174,7 +171,7 @@ class ServerMenu(State):
     def refresh_server_info(self):
         ec2 = boto3.client('ec2')
         self._server_statuses = []
-        for server in servers:
+        for server in self._servers:
             try:
                 response = ec2.describe_instances(
                     InstanceIds=[
@@ -262,6 +259,9 @@ class ServerMenu(State):
 
     def __init__(self):
         self._server_statuses = None
+        config_path = str(Path.home()) + '/.mc-server-manager/config'
+        with open(config_path, 'r') as config_in:
+            self._servers = json.load(config_in)
 
 class CredentialMenu(State):
 
@@ -294,15 +294,135 @@ class CredentialMenu(State):
             current_secret_key = secret_key_input
 
         with open(cred_path, 'w') as configfile:
-            config['default']['aws_access_key_id'] = current_access_key
-            config['default']['aws_secret_access_key'] = current_secret_key
+            config.read_dict(
+                {
+                    'default': {
+                        'aws_access_key_id': current_access_key,
+                        'aws_secret_access_key': current_secret_key
+                    }
+                }
+            )
             config.write(configfile)
 
     def handle(self, menu_context):
+        config_path = str(Path.home()) + '/.aws/credentials'
+        config_dir = str(Path.home()) + '/.aws'
+        if (not os.path.exists(config_dir)):
+            os.makedirs(config_dir)
+        if (not os.path.exists(config_path) or not os.path.isfile(config_path)):
+            Path(config_path).touch()
         self.load_config()
         menu_context.set_state(MainMenu())
 
+class AppConfigMenu(State):
+
+    def __init__(self):
+        self._servers = None
+
+    def load_servers(self):
+        config_path = str(Path.home()) + '/.mc-server-manager/config'
+        if (os.path.exists(config_path) and os.path.isfile(config_path)):
+            with open(config_path) as config_in:
+                self._servers = json.load(config_in)
+        else:
+            self._servers = []
+
+    def save_servers(self):
+        config_path = str(Path.home()) + '/.mc-server-manager/config'
+        with open(config_path, 'w') as config_out:
+            json.dump(self._servers, config_out)
+
+    def add_server(self):
+        clear_console()
+        server_name = input('Please enter the new server\'s name: ')
+        instance_id = input('Please enter the new server\'s instance id: ')
+        self._servers.append(
+            {
+                'Name': server_name,
+                'InstanceId': instance_id
+            }
+        )
+    
+    def remove_server(self):
+        clear_console()
+        for index, server in enumerate(self._servers):
+            print('[{}] Name: {} | Instance ID: {}'.format(index, server['Name'], server['InstanceId']))
+        server_selection = int(input('Please select a server to remove: '))
+        self._servers.pop(server_selection)
+
+    def modify_server(self):
+        clear_console()
+        for index, server in enumerate(self._servers):
+            print('[{}] Name: {} | Instance ID: {}'.format(index, server['Name'], server['InstanceId']))
+        server_selection = int(input('Please select a server to remove: '))
+        server_name_input = input('Please enter the new server\'s name [{}]: '.format(self._servers[server_selection]['Name']))
+        instance_id_input = input('Please enter the new server\'s instance id [{}]: '.format(self._servers[server_selection]['InstanceId']))
+        if (server_name_input):
+            self._servers[server_selection]['Name'] = server_name_input
+        if (instance_id_input):
+            self._servers[server_selection]['InstanceId'] = instance_id_input
+
+    def show_config_menu(self, menu_context):
+        menu_selection = None
+        while(menu_selection != '0'):
+            clear_console()
+            for index, server in enumerate(self._servers):
+                print('[{}] Name: {} | Instance ID: {}'.format(index, server['Name'], server['InstanceId']))
+            print('')
+            print('Welcome to the app config menu, from here you can alter which servers this application monitors')
+            print('Please select from the following options')
+            print('[1] Add new server to the list')
+            print('[2] Remove existing server from the list')
+            print('[3] Modify existing server on the list')
+            print('[0] Return to main menu')
+            menu_selection = input('Please select an operation: ')
+
+            if (menu_selection == '1'):
+                self.add_server()
+            elif (menu_selection == '2'):
+                self.remove_server()
+            elif (menu_selection == '3'):
+                self.modify_server()
+            elif (menu_selection == '0'):
+                menu_context.set_state(MainMenu())
+            else:
+                input('Invalid selection, please select from the displayed options. Press enter to continue...')
+
+    def handle(self, menu_context):
+        self.load_servers()
+        self.show_config_menu(menu_context)
+        self.save_servers()
+
+def check_and_set_aws_config():
+    aws_config_path = str(Path.home()) + '/.aws/config'
+    aws_config_dir = str(Path.home()) + '/.aws'
+    config = configparser.ConfigParser()
+    if (not os.path.exists(aws_config_dir)):
+        os.makedirs(aws_config_dir)
+    if (not os.path.exists(aws_config_path) or not os.path.isfile(aws_config_path)):
+        Path(aws_config_path).touch()
+        region_input = input('Please enter the region to use as a default region: ')
+        with open(aws_config_path, 'w') as configfile:
+            config.read_dict(
+                {
+                    'default': {
+                        'region': region_input
+                    }
+                }
+            )
+            config.write(configfile)
+        
 def main():
+    clear_console()
+    check_and_set_aws_config()
+    config_path = str(Path.home()) + '/.mc-server-manager/config'
+    config_dir = str(Path.home()) + '/.mc-server-manager'
+    if (not os.path.exists(config_dir)):
+        os.makedirs(config_dir)
+    if (not os.path.exists(config_path) or not os.path.isfile(config_path)):
+        Path(config_path).touch()
+        with open(config_path, 'a') as new_config:
+            json.dump([], new_config)
     menu_context = MenuContext(MainMenu())
     while (True):
         menu_context.request()

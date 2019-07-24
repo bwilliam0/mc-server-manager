@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='mc_server_manager',
-    version='0.1.0',
+    version='0.2.0',
     description='Manages Minecraft Servers on AWS',
     url='https://github.com/bwilliam0/mc-server-manager',
     author='bwilliam0',
