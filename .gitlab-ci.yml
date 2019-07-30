@@ -3,6 +3,9 @@
 # https://hub.docker.com/r/library/python/tags/
 image: python:3.6
 
+stages:
+  - deploy
+
 before_script:
   - python -V  # Print out python version for debugging
   - pip install virtualenv
@@ -11,6 +14,7 @@ before_script:
   - source venv/bin/activate
 
 build_develop:
+  stage: deploy
   variables:
     TWINE_USERNAME: $STAGING_USERNAME
     TWINE_PASSWORD: $STAGING_PASSWORD
@@ -18,7 +22,27 @@ build_develop:
     - python setup.py sdist
     - twine upload dist/*
   artifacts:
-    - dist/*.tar.gz
+    paths:
+      - dist/*.tar.gz
   only:
-    - develop
     - tags
+    - ^v[0-9]+\.[0-9]+\.[0-9]+$
+  except:
+    - master
+
+build_master:
+  stage: deploy
+  variables:
+    TWINE_USERNAME: $PYPI_USERNAME
+    TWINE_PASSWORD: $PYPI_PASSWORD
+  script:
+    - python setup.py sdist
+    - twine upload dist/*
+  artifacts:
+    paths:
+      - dist/*.tar.gz
+  only:
+    - tags
+    - ^v[0-9]+\.[0-9]+\.[0-9]+$
+  except:
+    - master

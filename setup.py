@@ -1,13 +1,16 @@
 import setuptools
+import os
+
+current_version = os.environ['CI_COMMIT_TAG'][1:]
 
 setuptools.setup(
     name='mc_server_manager',
-    version='0.2.0',
-    description='Manages Minecraft Servers on AWS',
+    version=current_version,
+    description='Manages Servers on AWS',
     url='https://github.com/bwilliam0/mc-server-manager',
     author='bwilliam0',
     author_email='dev@mycodeiscompiling.com',
-    license='MIT',
+    license='Apache License 2.0',
     packages=setuptools.find_packages(exclude=('scripts',)),
     entry_points={
         'console_scripts': [
