@@ -1,0 +1,24 @@
+# This file is a template, and might need editing before it works on your project.
+# Official language image. Look for the different tagged releases at:
+# https://hub.docker.com/r/library/python/tags/
+image: python:3.6
+
+before_script:
+  - python -V  # Print out python version for debugging
+  - pip install virtualenv
+  - pip install twine
+  - virtualenv venv
+  - source venv/bin/activate
+
+build_develop:
+  variables:
+    TWINE_USERNAME: $STAGING_USERNAME
+    TWINE_PASSWORD: $STAGING_PASSWORD
+  script:
+    - python setup.py sdist
+    - twine upload dist/*
+  artifacts:
+    - dist/*.tar.gz
+  only:
+    - develop
+    - tags
