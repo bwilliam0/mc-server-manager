@@ -20,6 +20,7 @@ build_develop:
     TWINE_PASSWORD: $STAGING_PASSWORD
   script:
     - python setup.py sdist
+    - echo $TWINE_USERNAME
     - twine upload dist/*
   artifacts:
     paths:
