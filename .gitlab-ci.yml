@@ -22,7 +22,7 @@ build_develop:
       - dist/*.tar.gz
   only:
     - branches
-    - develop
+    - ^develop$
 
 pypi_deploy:
   stage: deploy
