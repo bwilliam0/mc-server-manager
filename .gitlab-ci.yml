@@ -22,7 +22,7 @@ build_develop:
       - dist/*.tar.gz
   only:
     - branches
-    - ^develop$
+    - /^develop$/
 
 pypi_deploy:
   stage: deploy
@@ -38,4 +38,4 @@ pypi_deploy:
       - dist/*.tar.gz
   only:
     - tags
-    - ^v[0-9]+\.[0-9]+\.[0-9]+-release$
+    - /^v[0-9]+\.[0-9]+\.[0-9]+-release$/
