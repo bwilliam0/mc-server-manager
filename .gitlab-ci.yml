@@ -18,6 +18,7 @@ build_develop:
   variables:
     TWINE_USERNAME: $STAGING_USERNAME
     TWINE_PASSWORD: $STAGING_PASSWORD
+    TWINE_REPOSITORY_URL: $TWINE_URL
   script:
     - python setup.py sdist
     - echo $TWINE_USERNAME
