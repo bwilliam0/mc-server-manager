@@ -1,7 +1,14 @@
 import setuptools
+import re
 import os
 
-current_version = os.environ['CI_COMMIT_TAG'][1:]
+release_tag_pattern = re.compile('^v[0-9]+\\.[0-9]+\\.[0-9]+-release$')
+
+if ('CI_COMMIT_TAG' in os.environ and release_tag_pattern.match(os.environ['CI_COMMIT_TAG'])):
+    current_version = os.environ['CI_COMMIT_TAG'][1:][:-8]
+else:
+    current_version = os.environ['CI_COMMIT_SHORT_SHA']
+
 
 setuptools.setup(
     name='mc_server_manager',
