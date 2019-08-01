@@ -21,7 +21,6 @@ build_develop:
     paths:
       - dist/*.tar.gz
   only:
-    - branches
     - /^develop$/
 
 pypi_deploy:
