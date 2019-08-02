@@ -2,12 +2,16 @@ import setuptools
 import re
 import os
 
+here = os.path.abspath(os.path.dirname(__file__))
 release_tag_pattern = re.compile('^v[0-9]+\\.[0-9]+\\.[0-9]+-release$')
 
-if ('CI_COMMIT_TAG' in os.environ and release_tag_pattern.match(os.environ['CI_COMMIT_TAG'])):
-    current_version = os.environ['CI_COMMIT_TAG'][1:][:-8]
+with open(os.path.join(here, 'VERSION')) as version_file:
+    version = version_file.read().strip()
+
+if (release_tag_pattern.match(version)):
+    current_version = version[1:][:-8]
 else:
-    current_version = os.environ['CI_COMMIT_SHORT_SHA']
+    current_version = version
 
 
 setuptools.setup(
